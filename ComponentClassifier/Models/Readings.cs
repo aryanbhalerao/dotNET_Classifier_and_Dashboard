@@ -4,12 +4,12 @@ namespace ComponentClassifier.Models
 {
     public class Reading
     {
-        public string TimeStamp { get; set; }
-        public string Component { get; set; }
+        public string TimeStamp { get; set; } = string.Empty;
+        public string Component { get; set; } = string.Empty;
         public double Fault { get; set; }
 
         // These fields are not in the JSON, we will populate them.
-        public string Result { get; set; }
-        public string Type { get; set; }
+        public string Result { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
     }
 }

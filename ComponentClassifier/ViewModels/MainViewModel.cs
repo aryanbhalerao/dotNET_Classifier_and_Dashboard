@@ -26,20 +26,20 @@ namespace ComponentClassifier.ViewModels
         [ObservableProperty] private int _totalFaultsDetected;
         [ObservableProperty] private int _needInspection;
         [ObservableProperty] private int _faulty;
-        [ObservableProperty] private string _passPercentage;
-        [ObservableProperty] private string _inspectPercentage;
-        [ObservableProperty] private string _failPercentage;
+        [ObservableProperty] private string _passPercentage = string.Empty;
+        [ObservableProperty] private string _inspectPercentage = string.Empty;
+        [ObservableProperty] private string _failPercentage = string.Empty;
 
         [ObservableProperty] private int _nutsFed;
         [ObservableProperty] private int _fastenersFed;
         [ObservableProperty] private int _faultsInNuts;
         [ObservableProperty] private int _faultsInFasteners;
 
-        [ObservableProperty] private SeriesCollection _resultPieChartSeries;
-        [ObservableProperty] private SeriesCollection _typeBarChartSeries;
-        [ObservableProperty] private string[] _typeBarChartLabels;
-        [ObservableProperty] private SeriesCollection _faultsLineChartSeries;
-        [ObservableProperty] private string[] _faultsLineChartLabels;
+        [ObservableProperty] private SeriesCollection _resultPieChartSeries = new();
+        [ObservableProperty] private SeriesCollection _typeBarChartSeries = new();
+        [ObservableProperty] private string[] _typeBarChartLabels = Array.Empty<string>();
+        [ObservableProperty] private SeriesCollection _faultsLineChartSeries = new();
+        [ObservableProperty] private string[] _faultsLineChartLabels = Array.Empty<string>();
 
         public MainViewModel()
         {
@@ -67,7 +67,7 @@ namespace ComponentClassifier.ViewModels
             try
             {
                 var jsonText = File.ReadAllText(filePath);
-                rawReadings = JsonConvert.DeserializeObject<List<Reading>>(jsonText);
+                rawReadings = JsonConvert.DeserializeObject<List<Reading>>(jsonText) ?? new List<Reading>();
             }
             catch (Exception ex)
             {
