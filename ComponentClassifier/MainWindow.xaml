@@ -14,7 +14,20 @@
     </Window.DataContext>
 
     <Grid Margin="10">
-        <TabControl>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- File picker bar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
+            <TextBlock Text="Data file:" VerticalAlignment="Center" Margin="0,0,6,0" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding CurrentFilePath}" VerticalAlignment="Center" Margin="0,0,10,0"
+                       Foreground="Gray" FontStyle="Italic"/>
+            <Button Content="Browse…" Command="{Binding BrowseFileCommand}" Padding="10,3"/>
+        </StackPanel>
+
+        <TabControl Grid.Row="1">
             <!-- Results Tab (Unchanged) -->
             <TabItem Header="Results">
                 <DataGrid ItemsSource="{Binding ClassifiedReadings}" 

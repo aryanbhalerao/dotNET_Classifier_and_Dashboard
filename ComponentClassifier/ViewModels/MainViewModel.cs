@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ComponentClassifier.Models;
 using LiveCharts;
 using LiveCharts.Wpf;
@@ -15,27 +16,25 @@ namespace ComponentClassifier.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        // Collection for the "Results" tab's DataGrid
+        [ObservableProperty]
+        private string _currentFilePath = "Readings.json";
+
         [ObservableProperty]
         private ObservableCollection<Reading> _classifiedReadings = new();
 
-        // --- Dashboard Summary Properties (UPDATED) ---
         [ObservableProperty] private int _totalComponentsFed;
-        [ObservableProperty] private int _totalFaultsDetected; // INSPECT + FAIL
-        [ObservableProperty] private int _needInspection; // count of INSPECT
-        [ObservableProperty] private int _faulty; // count of FAIL
+        [ObservableProperty] private int _totalFaultsDetected;
+        [ObservableProperty] private int _needInspection;
+        [ObservableProperty] private int _faulty;
         [ObservableProperty] private string _passPercentage;
         [ObservableProperty] private string _inspectPercentage;
         [ObservableProperty] private string _failPercentage;
 
-        // New properties for detailed type statistics
         [ObservableProperty] private int _nutsFed;
         [ObservableProperty] private int _fastenersFed;
         [ObservableProperty] private int _faultsInNuts;
         [ObservableProperty] private int _faultsInFasteners;
 
-
-        // --- Chart Data Properties (Unchanged) ---
         [ObservableProperty] private SeriesCollection _resultPieChartSeries;
         [ObservableProperty] private SeriesCollection _typeBarChartSeries;
         [ObservableProperty] private string[] _typeBarChartLabels;
@@ -44,21 +43,35 @@ namespace ComponentClassifier.ViewModels
 
         public MainViewModel()
         {
-            LoadAndProcessData();
+            LoadAndProcessData(CurrentFilePath);
         }
 
-        private void LoadAndProcessData()
+        [RelayCommand]
+        private void BrowseFile()
         {
-            // (Steps 1 and 2: Loading and Classification are unchanged)
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                Title = "Select Readings JSON file"
+            };
+            if (dialog.ShowDialog() == true)
+            {
+                CurrentFilePath = dialog.FileName;
+                LoadAndProcessData(CurrentFilePath);
+            }
+        }
+
+        private void LoadAndProcessData(string filePath)
+        {
             var rawReadings = new List<Reading>();
             try
             {
-                var jsonText = File.ReadAllText("Readings.json");
+                var jsonText = File.ReadAllText(filePath);
                 rawReadings = JsonConvert.DeserializeObject<List<Reading>>(jsonText);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error reading or parsing Readings.json: {ex.Message}");
+                MessageBox.Show($"Error reading or parsing {Path.GetFileName(filePath)}: {ex.Message}");
                 return;
             }
 
@@ -79,13 +92,12 @@ namespace ComponentClassifier.ViewModels
                 processedReadings.Add(reading);
             }
 
-            processedReadings = processedReadings.OrderBy(r => DateTime.ParseExact(r.TimeStamp, "ddMMyyyy-HHmmss", CultureInfo.InvariantCulture)).ToList();
+            processedReadings = processedReadings
+                .OrderBy(r => DateTime.ParseExact(r.TimeStamp, "ddMMyyyy-HHmmss", CultureInfo.InvariantCulture))
+                .ToList();
+
             ClassifiedReadings = new ObservableCollection<Reading>(processedReadings);
-
-            // 3. Calculate all metrics for the dashboard (UPDATED)
             CalculateDashboardMetrics(processedReadings);
-
-            // 4. Prepare data collections for the charts (Unchanged)
             PrepareChartData(processedReadings);
         }
 
@@ -93,13 +105,11 @@ namespace ComponentClassifier.ViewModels
         {
             TotalComponentsFed = readings.Count;
 
-            // General counts
             var passCount = readings.Count(r => r.Result == "PASS");
             NeedInspection = readings.Count(r => r.Result == "INSPECT");
             Faulty = readings.Count(r => r.Result == "FAIL");
             TotalFaultsDetected = NeedInspection + Faulty;
 
-            // General percentages
             if (TotalComponentsFed > 0)
             {
                 PassPercentage = $"{(double)passCount / TotalComponentsFed:P2}";
@@ -113,7 +123,6 @@ namespace ComponentClassifier.ViewModels
                 FailPercentage = "0.00%";
             }
 
-            // Calculate new detailed type statistics
             NutsFed = readings.Count(r => r.Type == "Nuts");
             FastenersFed = readings.Count(r => r.Type == "Fasteners");
             FaultsInNuts = readings.Count(r => r.Type == "Nuts" && r.Result != "PASS");
@@ -122,7 +131,6 @@ namespace ComponentClassifier.ViewModels
 
         private void PrepareChartData(List<Reading> readings)
         {
-            // This method remains unchanged
             ResultPieChartSeries = new SeriesCollection
             {
                 new PieSeries { Title = "PASS", Values = new ChartValues<int> { readings.Count(r => r.Result == "PASS") }, DataLabels = true },
@@ -152,7 +160,9 @@ namespace ComponentClassifier.ViewModels
                     Values = new ChartValues<double>(readings.Select(r => r.Fault))
                 }
             };
-            FaultsLineChartLabels = readings.Select(r => DateTime.ParseExact(r.TimeStamp, "ddMMyyyy-HHmmss", CultureInfo.InvariantCulture).ToString("g")).ToArray();
+            FaultsLineChartLabels = readings
+                .Select(r => DateTime.ParseExact(r.TimeStamp, "ddMMyyyy-HHmmss", CultureInfo.InvariantCulture).ToString("g"))
+                .ToArray();
         }
     }
 }
